@@ -37,6 +37,42 @@ const categoryColors = {
   Other: 'badge-blue',
 }
 
+const hasActiveFilters = computed(() => {
+  return !!(search.value || filterDateFrom.value || filterDateTo.value || filterName.value || filterCategory.value || filterPayment.value)
+})
+
+const totalAllSpendings = computed(() => {
+  return spendingStore.spendings.reduce((sum, s) => sum + Number(s.price), 0)
+})
+
+const allSpendingsCount = computed(() => {
+  return spendingStore.spendings.length
+})
+
+const totalByName = computed(() => {
+  const map = {}
+  spendingStore.spendings.forEach((s) => {
+    map[s.name] = (map[s.name] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
+})
+
+const totalByCategory = computed(() => {
+  const map = {}
+  spendingStore.spendings.forEach((s) => {
+    map[s.category] = (map[s.category] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
+})
+
+const totalByPayment = computed(() => {
+  const map = {}
+  spendingStore.spendings.forEach((s) => {
+    map[s.paymentMethod] = (map[s.paymentMethod] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
+})
+
 const filteredSpendings = computed(() => {
   let list = [...spendingStore.spendings]
 
@@ -130,6 +166,34 @@ onMounted(() => {
     <h1 class="page-header gradient-text mb-1">History</h1>
     <p class="text-sm text-gray-400 mb-5">Review all your spending</p>
 
+    <div class="gradient-header rounded-2xl p-5 text-white shadow-lg shadow-primary-500/20 mb-4">
+      <div class="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">All-Time Total</div>
+      <div class="text-3xl font-extrabold mb-3">{{ formatCurrency(totalAllSpendings) }}</div>
+      <div class="text-xs text-white/60 mb-3">{{ allSpendingsCount }} transactions</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div v-for="([name, total]) in totalByName" :key="name" class="bg-white/15 rounded-xl px-3 py-2">
+          <div class="text-[10px] text-white/60 uppercase tracking-wider">{{ name }}</div>
+          <div class="text-sm font-bold">{{ formatCurrency(total) }}</div>
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-white/20">
+        <div class="text-[10px] text-white/50 uppercase tracking-wider mb-1.5">By Category</div>
+        <div class="flex flex-wrap gap-1.5">
+          <span v-for="([cat, total]) in totalByCategory" :key="cat" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
+            {{ categoryEmojis[cat] || '📦' }} {{ cat }}: {{ formatCurrency(total) }}
+          </span>
+        </div>
+      </div>
+      <div class="mt-2">
+        <div class="text-[10px] text-white/50 uppercase tracking-wider mb-1.5">By Payment</div>
+        <div class="flex flex-wrap gap-1.5">
+          <span v-for="([method, total]) in totalByPayment" :key="method" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
+            {{ method }}: {{ formatCurrency(total) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <div class="glass-card p-4 mb-4 space-y-3">
       <div class="relative">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +233,7 @@ onMounted(() => {
         </select>
       </div>
 
-      <button @click="clearFilters" class="btn-ghost text-xs w-full">
+      <button v-if="hasActiveFilters" @click="clearFilters" class="btn-ghost text-xs w-full">
         Clear All Filters
       </button>
     </div>
@@ -179,14 +243,24 @@ onMounted(() => {
       <p class="text-gray-400 text-sm">Loading...</p>
     </div>
 
-    <div v-else-if="filteredSpendings.length === 0" class="text-center py-16">
+    <div v-else-if="spendingStore.spendings.length === 0" class="text-center py-16">
       <div class="text-5xl mb-3">&#128465;</div>
-      <p class="text-gray-400 text-sm">No spendings found</p>
+      <p class="text-gray-400 text-sm">No spendings yet</p>
+      <p class="text-gray-300 text-xs mt-1">Add your first spending to get started</p>
+    </div>
+
+    <div v-else-if="filteredSpendings.length === 0" class="text-center py-16">
+      <div class="text-5xl mb-3">&#128269;</div>
+      <p class="text-gray-400 text-sm">No results match your filters</p>
+      <button @click="clearFilters" class="btn-ghost text-sm mt-2">Clear Filters</button>
     </div>
 
     <div v-else>
       <div class="flex justify-between items-center mb-3 glass-card px-4 py-2.5">
-        <span class="text-xs text-gray-500 font-medium">{{ filteredSpendings.length }} items</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 font-medium">{{ filteredSpendings.length }} items</span>
+          <span v-if="hasActiveFilters" class="text-[10px] bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded-full font-semibold">filtered</span>
+        </div>
         <span class="text-sm font-bold gradient-text">{{ formatCurrency(totalFiltered) }}</span>
       </div>
 
