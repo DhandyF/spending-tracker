@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f0ff;
+  --color-primary-100: #e0e0ff;
+  --color-primary-200: #c7c7fe;
+  --color-primary-300: #a4a4fc;
+  --color-primary-400: #8181f7;
+  --color-primary-500: #6c5ce7;
+  --color-primary-600: #5a45d6;
+  --color-primary-700: #4c38b8;
+  --color-primary-800: #3e2f94;
+  --color-primary-900: #362b75;
+
+  --color-accent-400: #fd79a8;
+  --color-accent-500: #e84393;
+
+  --color-surface: #f8f7ff;
+  --color-surface-card: #ffffff;
+  --color-surface-dark: #0f0a2a;
+
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f8f7ff 0%, #eee9ff 50%, #f0e6ff 100%);
+    min-height: 100vh;
+  }
+
+  input[type="date"],
+  input[type="month"] {
+    color-scheme: light;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c7c7fe;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(108, 92, 231, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .glass-card-hover {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .gradient-header {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 50%, #e84393 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #6c5ce7, #a855f7, #e84393);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.5rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(108, 92, 231, 0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.45);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+  }
+
+  .btn-ghost {
+    background: rgba(108, 92, 231, 0.08);
+    color: #6c5ce7;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover {
+    background: rgba(108, 92, 231, 0.15);
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid #e0dff0;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    color: #1a1a2e;
+  }
+  .input-field:focus {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12);
+    background: white;
+  }
+  .input-field::placeholder {
+    color: #b0aecb;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .badge-purple {
+    background: rgba(108, 92, 231, 0.12);
+    color: #6c5ce7;
+  }
+  .badge-pink {
+    background: rgba(232, 67, 147, 0.12);
+    color: #e84393;
+  }
+  .badge-green {
+    background: rgba(0, 184, 148, 0.12);
+    color: #00b894;
+  }
+  .badge-amber {
+    background: rgba(253, 203, 110, 0.3);
+    color: #d68910;
+  }
+  .badge-blue {
+    background: rgba(9, 132, 227, 0.12);
+    color: #0984e3;
+  }
+
+  .page-header {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+  .slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
