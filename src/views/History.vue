@@ -16,6 +16,7 @@ const filterCategory = ref('')
 const filterPayment = ref('')
 const editingId = ref(null)
 const editForm = ref({})
+const syncingItem = ref(null)
 
 const categoryEmojis = {
   Food: '🍔',
@@ -72,6 +73,8 @@ const totalByPayment = computed(() => {
   })
   return Object.entries(map).sort((a, b) => b[1] - a[1])
 })
+
+const pendingCount = computed(() => spendingStore.getPendingCount())
 
 const filteredSpendings = computed(() => {
   let list = [...spendingStore.spendings]
@@ -147,6 +150,26 @@ async function handleDelete(id) {
   }
 }
 
+async function handleSyncItem(id) {
+  syncingItem.value = id
+  const success = await spendingStore.syncItem(id)
+  if (success) {
+    toast.success('Synced successfully!')
+  } else {
+    toast.error('Sync failed. Try again later.')
+  }
+  syncingItem.value = null
+}
+
+async function handleSyncAll() {
+  await spendingStore.syncAll()
+  if (spendingStore.getPendingCount() === 0) {
+    toast.success('All synced!')
+  } else {
+    toast.error('Some items failed to sync')
+  }
+}
+
 function clearFilters() {
   search.value = ''
   filterDateFrom.value = ''
@@ -157,7 +180,7 @@ function clearFilters() {
 }
 
 onMounted(() => {
-  spendingStore.fetchSpendings().catch((e) => toast.error(e.message))
+  spendingStore.fetchSpendings()
 })
 </script>
 
@@ -165,6 +188,32 @@ onMounted(() => {
   <div class="px-4 pt-6 pb-24 max-w-lg mx-auto slide-up">
     <h1 class="page-header gradient-text mb-1">History</h1>
     <p class="text-sm text-gray-400 mb-5">Review all your spending</p>
+
+    <div v-if="pendingCount > 0" class="mb-4 glass-card border-2 border-amber-300 bg-amber-50/80 p-3.5">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="text-sm font-semibold text-amber-700">{{ pendingCount }} pending sync</span>
+        </div>
+        <button
+          @click="handleSyncAll"
+          :disabled="spendingStore.syncing"
+          class="btn-primary text-xs py-1.5 px-3"
+        >
+          <span v-if="spendingStore.syncing" class="flex items-center gap-1">
+            <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Syncing...
+          </span>
+          <span v-else>Sync All</span>
+        </button>
+      </div>
+      <p class="text-xs text-amber-600">Some changes haven't synced to the cloud. Tap Sync All to retry.</p>
+    </div>
 
     <div class="gradient-header rounded-2xl p-5 text-white shadow-lg shadow-primary-500/20 mb-4">
       <div class="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">All-Time Total</div>
@@ -238,7 +287,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="spendingStore.loading" class="text-center py-12">
+    <div v-if="spendingStore.loading && spendingStore.spendings.length === 0" class="text-center py-12">
       <div class="w-10 h-10 border-3 border-primary-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-3"></div>
       <p class="text-gray-400 text-sm">Loading...</p>
     </div>
@@ -269,6 +318,7 @@ onMounted(() => {
           v-for="spending in filteredSpendings"
           :key="spending.id"
           class="glass-card glass-card-hover overflow-hidden"
+          :class="{ 'ring-2 ring-amber-300': spending._pending && spending._opType !== 'delete' }"
         >
           <template v-if="editingId !== spending.id">
             <div class="p-4">
@@ -283,23 +333,41 @@ onMounted(() => {
                     <span :class="['badge', categoryColors[spending.category] || 'badge-blue']">{{ spending.category }}</span>
                     <span class="badge badge-green">{{ spending.paymentMethod }}</span>
                   </div>
-                  <div class="text-xs text-gray-400">{{ formatDate(spending.date) }}</div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">{{ formatDate(spending.date) }}</span>
+                    <span v-if="spending._pending && spending._opType === 'add'" class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">pending sync</span>
+                    <span v-if="spending._pending && spending._opType === 'update'" class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">update pending</span>
+                  </div>
                 </div>
                 <div class="text-right flex-shrink-0">
                   <div class="text-lg font-bold text-gray-800">{{ formatCurrency(Number(spending.price)) }}</div>
                   <div class="flex gap-2 mt-1 justify-end">
                     <button
-                      @click="startEdit(spending)"
-                      class="text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors"
+                      v-if="spending._pending && spending._opType !== 'delete'"
+                      @click="handleSyncItem(spending.id)"
+                      :disabled="syncingItem === spending.id"
+                      class="text-xs text-amber-600 hover:text-amber-800 font-semibold transition-colors flex items-center gap-0.5"
                     >
-                      Edit
+                      <svg v-if="syncingItem === spending.id" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {{ syncingItem === spending.id ? 'Syncing' : 'Sync' }}
                     </button>
-                    <button
-                      @click="handleDelete(spending.id)"
-                      class="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <template v-else>
+                      <button
+                        @click="startEdit(spending)"
+                        class="text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        @click="handleDelete(spending.id)"
+                        class="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </template>
                   </div>
                 </div>
               </div>

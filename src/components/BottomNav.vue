@@ -1,13 +1,17 @@
 <script setup>
 import { useRoute } from 'vue-router'
+import { useSpendingStore } from '@/stores/spending'
+import { useBudgetStore } from '@/stores/budget'
 
 const route = useRoute()
+const spendingStore = useSpendingStore()
+const budgetStore = useBudgetStore()
 
 const navItems = [
   { name: 'Add', path: '/', icon: 'plus' },
-  { name: 'History', path: '/history', icon: 'clock' },
+  { name: 'History', path: '/history', icon: 'clock', hasPending: () => spendingStore.hasPending() },
   { name: 'Stats', path: '/statistics', icon: 'chart' },
-  { name: 'Budget', path: '/budget', icon: 'wallet' },
+  { name: 'Budget', path: '/budget', icon: 'wallet', hasPending: () => budgetStore.hasPending() },
 ]
 </script>
 
@@ -91,6 +95,10 @@ const navItems = [
                   d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                 />
               </svg>
+              <span
+                v-if="item.hasPending && item.hasPending()"
+                class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full border-2 border-white/50"
+              ></span>
             </div>
             <span
               class="text-[10px] mt-0.5 font-semibold tracking-wide"

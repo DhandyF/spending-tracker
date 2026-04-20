@@ -12,6 +12,9 @@ const toast = useToast()
 
 const showForm = ref(false)
 const editingId = ref(null)
+const syncingBudgetItem = ref(null)
+
+const budgetPendingCount = computed(() => budgetStore.budgets.filter((b) => b._pending).length)
 const form = ref({
   category: CATEGORIES[0],
   yearMonth: '',
@@ -122,12 +125,28 @@ async function handleSubmit() {
 
 async function handleDelete(id) {
   if (confirm('Are you sure you want to delete this budget?')) {
-    try {
-      await budgetStore.deleteBudget(id)
-      toast.success('Budget deleted')
-    } catch (e) {
-      toast.error(e.message)
-    }
+    await budgetStore.deleteBudget(id)
+    toast.success('Budget deleted')
+  }
+}
+
+async function handleSyncBudgetItem(id) {
+  syncingBudgetItem.value = id
+  const success = await budgetStore.syncItem(id)
+  syncingBudgetItem.value = null
+  if (success) {
+    toast.success('Synced successfully!')
+  } else {
+    toast.error('Sync failed. Try again later.')
+  }
+}
+
+async function handleSyncAllBudgets() {
+  await budgetStore.syncAll()
+  if (budgetStore.hasPending()) {
+    toast.error('Some items failed to sync')
+  } else {
+    toast.success('All synced!')
   }
 }
 
@@ -226,7 +245,33 @@ onMounted(() => {
       </div>
     </Transition>
 
-    <div v-if="budgetStore.loading" class="text-center py-12">
+    <div v-if="budgetPendingCount > 0" class="mb-4 glass-card border-2 border-amber-300 bg-amber-50/80 p-3.5">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="text-sm font-semibold text-amber-700">{{ budgetPendingCount }} pending sync</span>
+        </div>
+        <button
+          @click="handleSyncAllBudgets"
+          :disabled="budgetStore.syncing"
+          class="btn-primary text-xs py-1.5 px-3"
+        >
+          <span v-if="budgetStore.syncing" class="flex items-center gap-1">
+            <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Syncing...
+          </span>
+          <span v-else>Sync All</span>
+        </button>
+      </div>
+      <p class="text-xs text-amber-600">Some budgets haven't synced yet. Tap Sync All to retry.</p>
+    </div>
+
+    <div v-if="budgetStore.loading && budgetStore.budgets.length === 0" class="text-center py-12">
       <div class="w-10 h-10 border-3 border-primary-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-3"></div>
       <p class="text-gray-400 text-sm">Loading...</p>
     </div>
@@ -260,6 +305,7 @@ onMounted(() => {
           v-for="budget in currentMonthBudgets"
           :key="budget.id"
           class="glass-card glass-card-hover overflow-hidden"
+          :class="{ 'ring-2 ring-amber-300': budget._pending }"
         >
           <div class="p-4">
             <div class="flex justify-between items-start mb-3">
@@ -267,10 +313,29 @@ onMounted(() => {
                 <span class="text-2xl">{{ categoryEmojis[budget.category] || '📦' }}</span>
                 <div>
                   <div class="font-bold text-gray-800">{{ budget.category }}</div>
-                  <div class="text-xs text-gray-400">{{ monthLabel }}</div>
+                  <div class="flex items-center gap-2">
+                    <div class="text-xs text-gray-400">{{ monthLabel }}</div>
+                    <span v-if="budget._pending" class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">pending</span>
+                  </div>
                 </div>
               </div>
               <div class="flex items-center gap-1">
+                <button
+                  v-if="budget._pending && budget._opType !== 'delete'"
+                  @click="handleSyncBudgetItem(budget.id)"
+                  :disabled="syncingBudgetItem === budget.id"
+                  class="p-1.5 rounded-lg hover:bg-amber-50 text-amber-500 transition-colors flex items-center gap-1"
+                >
+                  <svg v-if="syncingBudgetItem === budget.id" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span class="text-xs font-semibold">Sync</span>
+                </button>
+                <template v-if="!budget._pending || budget._opType === 'delete'">
                 <button
                   @click="openEditForm(budget)"
                   class="p-1.5 rounded-lg hover:bg-primary-50 text-primary-500 transition-colors"
@@ -287,6 +352,7 @@ onMounted(() => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
+                </template>
               </div>
             </div>
 
