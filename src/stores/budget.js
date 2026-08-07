@@ -79,11 +79,12 @@ export const useBudgetStore = defineStore('budget', () => {
 
   async function deleteBudget(id) {
     const item = budgets.value.find((b) => b.id === id)
+    const yearMonth = item ? normalizeYearMonth(item.yearMonth) : null
     budgets.value = budgets.value.filter((b) => b.id !== id)
     _persist()
 
     try {
-      await apiDelete(id)
+      await apiDelete(id, yearMonth)
     } catch (e) {
       if (item) {
         budgets.value.push({ ...item, _pending: true, _opType: 'delete', _error: e.message })
@@ -128,7 +129,7 @@ export const useBudgetStore = defineStore('budget', () => {
 
     if (item._opType === 'delete') {
       try {
-        await apiDelete(id)
+        await apiDelete(id, normalizeYearMonth(item.yearMonth))
         budgets.value = budgets.value.filter((b) => b.id !== id)
         _persist()
         return true

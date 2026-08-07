@@ -30,8 +30,8 @@ export async function updateSpending(spending) {
   return apiCall('updateSpending', { spending })
 }
 
-export async function deleteSpending(id) {
-  return apiCall('deleteSpending', { id })
+export async function deleteSpending(id, yearMonth) {
+  return apiCall('deleteSpending', { id, yearMonth })
 }
 
 export async function getBudgets() {
@@ -46,6 +46,6 @@ export async function updateBudget(budget) {
   return apiCall('updateBudget', { budget })
 }
 
-export async function deleteBudget(id) {
-  return apiCall('deleteBudget', { id })
+export async function deleteBudget(id, yearMonth) {
+  return apiCall('deleteBudget', { id, yearMonth })
 }

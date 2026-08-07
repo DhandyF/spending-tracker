@@ -6,7 +6,7 @@ import {
   updateSpending as apiUpdate,
   deleteSpending as apiDelete,
 } from '@/utils/api'
-import { generateId } from '@/utils/helpers'
+import { generateId, getMonthYear } from '@/utils/helpers'
 
 export const useSpendingStore = defineStore('spending', () => {
   const spendings = ref([])
@@ -88,11 +88,12 @@ export const useSpendingStore = defineStore('spending', () => {
 
   async function deleteSpending(id) {
     const item = spendings.value.find((s) => s.id === id)
+    const yearMonth = item ? getMonthYear(item.date) : null
     removeLocalSpending(id)
     _persist()
 
     try {
-      await apiDelete(id)
+      await apiDelete(id, yearMonth)
     } catch (e) {
       if (item) {
         spendings.value.push({ ...item, _pending: true, _opType: 'delete', _error: e.message })
@@ -137,7 +138,7 @@ export const useSpendingStore = defineStore('spending', () => {
 
     if (item._opType === 'delete') {
       try {
-        await apiDelete(id)
+        await apiDelete(id, getMonthYear(item.date))
         spendings.value = spendings.value.filter((s) => s.id !== id)
         _persist()
         return true
