@@ -42,36 +42,9 @@ const hasActiveFilters = computed(() => {
   return !!(search.value || filterDateFrom.value || filterDateTo.value || filterName.value || filterCategory.value || filterPayment.value)
 })
 
-const totalAllSpendings = computed(() => {
-  return spendingStore.spendings.reduce((sum, s) => sum + Number(s.price), 0)
-})
-
-const allSpendingsCount = computed(() => {
-  return spendingStore.spendings.length
-})
-
-const totalByName = computed(() => {
-  const map = {}
-  spendingStore.spendings.forEach((s) => {
-    map[s.name] = (map[s.name] || 0) + Number(s.price)
-  })
-  return Object.entries(map).sort((a, b) => b[1] - a[1])
-})
-
-const totalByCategory = computed(() => {
-  const map = {}
-  spendingStore.spendings.forEach((s) => {
-    map[s.category] = (map[s.category] || 0) + Number(s.price)
-  })
-  return Object.entries(map).sort((a, b) => b[1] - a[1])
-})
-
-const totalByPayment = computed(() => {
-  const map = {}
-  spendingStore.spendings.forEach((s) => {
-    map[s.paymentMethod] = (map[s.paymentMethod] || 0) + Number(s.price)
-  })
-  return Object.entries(map).sort((a, b) => b[1] - a[1])
+const monthLabel = computed(() => {
+  const now = new Date()
+  return now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 })
 
 const pendingCount = computed(() => spendingStore.getPendingCount())
@@ -113,6 +86,30 @@ const filteredSpendings = computed(() => {
 
 const totalFiltered = computed(() => {
   return filteredSpendings.value.reduce((sum, s) => sum + Number(s.price), 0)
+})
+
+const filteredByName = computed(() => {
+  const map = {}
+  filteredSpendings.value.forEach((s) => {
+    map[s.name] = (map[s.name] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
+})
+
+const filteredByCategory = computed(() => {
+  const map = {}
+  filteredSpendings.value.forEach((s) => {
+    map[s.category] = (map[s.category] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
+})
+
+const filteredByPayment = computed(() => {
+  const map = {}
+  filteredSpendings.value.forEach((s) => {
+    map[s.paymentMethod] = (map[s.paymentMethod] || 0) + Number(s.price)
+  })
+  return Object.entries(map).sort((a, b) => b[1] - a[1])
 })
 
 function startEdit(spending) {
@@ -216,11 +213,11 @@ onMounted(() => {
     </div>
 
     <div class="gradient-header rounded-2xl p-5 text-white shadow-lg shadow-primary-500/20 mb-4">
-      <div class="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">All-Time Total</div>
-      <div class="text-3xl font-extrabold mb-3">{{ formatCurrency(totalAllSpendings) }}</div>
-      <div class="text-xs text-white/60 mb-3">{{ allSpendingsCount }} transactions</div>
+      <div class="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">{{ monthLabel }}</div>
+      <div class="text-3xl font-extrabold mb-3">{{ formatCurrency(totalFiltered) }}</div>
+      <div class="text-xs text-white/60 mb-3">{{ filteredSpendings.length }} transactions</div>
       <div class="grid grid-cols-2 gap-3">
-        <div v-for="([name, total]) in totalByName" :key="name" class="bg-white/15 rounded-xl px-3 py-2">
+        <div v-for="([name, total]) in filteredByName" :key="name" class="bg-white/15 rounded-xl px-3 py-2">
           <div class="text-[10px] text-white/60 uppercase tracking-wider">{{ name }}</div>
           <div class="text-sm font-bold">{{ formatCurrency(total) }}</div>
         </div>
@@ -228,7 +225,7 @@ onMounted(() => {
       <div class="mt-3 pt-3 border-t border-white/20">
         <div class="text-[10px] text-white/50 uppercase tracking-wider mb-1.5">By Category</div>
         <div class="flex flex-wrap gap-1.5">
-          <span v-for="([cat, total]) in totalByCategory" :key="cat" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
+          <span v-for="([cat, total]) in filteredByCategory" :key="cat" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
             {{ categoryEmojis[cat] || '📦' }} {{ cat }}: {{ formatCurrency(total) }}
           </span>
         </div>
@@ -236,7 +233,7 @@ onMounted(() => {
       <div class="mt-2">
         <div class="text-[10px] text-white/50 uppercase tracking-wider mb-1.5">By Payment</div>
         <div class="flex flex-wrap gap-1.5">
-          <span v-for="([method, total]) in totalByPayment" :key="method" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
+          <span v-for="([method, total]) in filteredByPayment" :key="method" class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-medium">
             {{ method }}: {{ formatCurrency(total) }}
           </span>
         </div>
