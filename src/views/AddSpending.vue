@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useSpendingStore } from '@/stores/spending'
 import { useBudgetStore } from '@/stores/budget'
 import { useToast } from '@/composables/useToast'
 import { NAMES, CATEGORIES, PAYMENT_METHODS } from '@/utils/constants'
-import { getTodayString, formatCurrency, normalizeYearMonth } from '@/utils/helpers'
+import { getTodayString, formatCurrency, normalizeYearMonth, getMonthYear } from '@/utils/helpers'
 
 const spendingStore = useSpendingStore()
 const budgetStore = useBudgetStore()
@@ -30,6 +30,55 @@ const categoryEmojis = {
   Snack: '🍿',
   Other: '📦',
 }
+
+const currentMonth = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+})
+
+const monthLabel = computed(() => {
+  const [y, m] = currentMonth.value.split('-')
+  return new Date(y, m - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+})
+
+const currentMonthBudgets = computed(() => {
+  return budgetStore.budgets.filter((b) => normalizeYearMonth(b.yearMonth) === currentMonth.value)
+})
+
+function getSpentForCategory(category) {
+  return spendingStore.spendings
+    .filter((s) => {
+      return s.category === category && getMonthYear(s.date) === currentMonth.value
+    })
+    .reduce((sum, s) => sum + Number(s.price), 0)
+}
+
+function getBudgetPercentage(budget) {
+  const spent = getSpentForCategory(budget.category)
+  const total = Number(budget.amount)
+  if (total === 0) return 0
+  return Math.min((spent / total) * 100, 100)
+}
+
+function getBarColor(budget) {
+  const pct = getBudgetPercentage(budget)
+  if (pct >= 90) return 'bg-red-500'
+  if (pct >= 70) return 'bg-amber-500'
+  return 'bg-gradient-to-r from-primary-500 to-purple-500'
+}
+
+const totalBudget = computed(() =>
+  currentMonthBudgets.value.reduce((sum, b) => sum + Number(b.amount), 0)
+)
+
+const totalSpent = computed(() =>
+  currentMonthBudgets.value.reduce((sum, b) => sum + getSpentForCategory(b.category), 0)
+)
+
+const totalPercentage = computed(() => {
+  if (totalBudget.value === 0) return 0
+  return Math.min((totalSpent.value / totalBudget.value) * 100, 100)
+})
 
 function getBudgetForCategory(category) {
   const now = new Date()
@@ -97,6 +146,44 @@ onMounted(() => {
   <div class="px-4 pt-6 pb-24 max-w-lg mx-auto slide-up">
     <h1 class="page-header gradient-text mb-1">Add Spending</h1>
     <p class="text-sm text-gray-400 mb-5">Track your daily expenses</p>
+
+    <div v-if="currentMonthBudgets.length > 0" class="glass-card p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ monthLabel }} Budget</div>
+        <div class="text-xs font-semibold" :class="totalSpent > totalBudget ? 'text-red-500' : 'text-primary-500'">
+          {{ formatCurrency(totalSpent) }} / {{ formatCurrency(totalBudget) }}
+        </div>
+      </div>
+
+      <div class="w-full bg-gray-100 rounded-full h-2 mb-4">
+        <div
+          class="h-2 rounded-full transition-all duration-700"
+          :class="totalPercentage >= 90 ? 'bg-red-500' : totalPercentage >= 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-primary-500 to-purple-500'"
+          :style="{ width: totalPercentage + '%' }"
+        ></div>
+      </div>
+
+      <div class="space-y-2.5">
+        <div v-for="budget in currentMonthBudgets" :key="budget.id">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">{{ categoryEmojis[budget.category] || '📦' }}</span>
+              <span class="text-xs font-semibold text-gray-700">{{ budget.category }}</span>
+            </div>
+            <span class="text-[11px] text-gray-400">
+              {{ formatCurrency(getSpentForCategory(budget.category)) }} / {{ formatCurrency(Number(budget.amount)) }}
+            </span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div
+              :class="getBarColor(budget)"
+              class="h-1.5 rounded-full transition-all duration-500"
+              :style="{ width: getBudgetPercentage(budget) + '%' }"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div class="glass-card p-4 space-y-4">
