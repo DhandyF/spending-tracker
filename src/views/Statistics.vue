@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useSpendingStore } from '@/stores/spending'
 import { useToast } from '@/composables/useToast'
 import { CATEGORIES } from '@/utils/constants'
-import { formatCurrency, getMonthYear } from '@/utils/helpers'
+import { formatCurrency, getMonthYear, getMonthStartString, getMonthEndString } from '@/utils/helpers'
 import { Doughnut, Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -29,8 +29,8 @@ ChartJS.register(
 const spendingStore = useSpendingStore()
 const toast = useToast()
 
-const filterDateFrom = ref('')
-const filterDateTo = ref('')
+const filterDateFrom = ref(getMonthStartString())
+const filterDateTo = ref(getMonthEndString())
 
 const chartType = ref('category')
 

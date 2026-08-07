@@ -3,14 +3,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useSpendingStore } from '@/stores/spending'
 import { useToast } from '@/composables/useToast'
 import { CATEGORIES, PAYMENT_METHODS, NAMES } from '@/utils/constants'
-import { formatDate, formatCurrency } from '@/utils/helpers'
+import { formatDate, formatCurrency, getMonthStartString, getMonthEndString } from '@/utils/helpers'
 
 const spendingStore = useSpendingStore()
 const toast = useToast()
 
 const search = ref('')
-const filterDateFrom = ref('')
-const filterDateTo = ref('')
+const filterDateFrom = ref(getMonthStartString())
+const filterDateTo = ref(getMonthEndString())
 const filterName = ref('')
 const filterCategory = ref('')
 const filterPayment = ref('')
