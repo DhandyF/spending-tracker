@@ -7,6 +7,7 @@ export const CATEGORIES = [
   'Husband',
   'Vath',
   'Snack',
+  'Emergency',
   'Other',
 ]
 

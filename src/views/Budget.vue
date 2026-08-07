@@ -28,6 +28,7 @@ const categoryEmojis = {
   Husband: '👔',
   Vath: '🙏',
   Snack: '🍿',
+  Emergency: '🚨',
   Other: '📦',
 }
 
