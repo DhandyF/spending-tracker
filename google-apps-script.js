@@ -1,7 +1,7 @@
 const SPREADSHEET_ID = 'YOUR_SPREAD_SHEET_ID';
 
-var BUDGET_MARKER = '=== BUDGETS ===';
-var SPENDING_MARKER = '=== SPENDINGS ===';
+var BUDGET_MARKER = '--- BUDGETS ---';
+var SPENDING_MARKER = '--- SPENDINGS ---';
 var BUDGET_HEADERS = ['id', 'category', 'yearMonth', 'amount', 'totalSpent'];
 var SPENDING_HEADERS = ['id', 'date', 'name', 'category', 'paymentMethod', 'description', 'price'];
 
@@ -80,11 +80,11 @@ function getMonthlySheet(yearMonth) {
 }
 
 function initMonthlySheet(sheet) {
-  sheet.getRange(1, 1).setValue(BUDGET_MARKER);
+  forceStringFormat(sheet, 1, 1, BUDGET_MARKER);
   sheet.getRange(2, 1, 1, BUDGET_HEADERS.length).setValues([BUDGET_HEADERS]);
   forceStringFormat(sheet, 2, 1, 'id');
   forceStringFormat(sheet, 2, 3, 'yearMonth');
-  sheet.getRange(3, 1).setValue(SPENDING_MARKER);
+  forceStringFormat(sheet, 3, 1, SPENDING_MARKER);
   sheet.getRange(4, 1, 1, SPENDING_HEADERS.length).setValues([SPENDING_HEADERS]);
   forceStringFormat(sheet, 4, 1, 'id');
   forceStringFormat(sheet, 4, 2, 'date');
