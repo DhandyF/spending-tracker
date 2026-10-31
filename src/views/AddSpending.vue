@@ -13,7 +13,7 @@ const toast = useToast()
 const form = ref({
   date: getTodayString(),
   name: NAMES[0],
-  category: CATEGORIES[0],
+  category: 'Other',
   paymentMethod: PAYMENT_METHODS[0],
   description: '',
   price: '',
@@ -36,6 +36,11 @@ const categoryEmojis = {
   Other: '📦',
 }
 
+const selectedMonth = computed(() => {
+  if (!form.value.date) return ''
+  return normalizeYearMonth(form.value.date)
+})
+
 const currentMonth = computed(() => {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -48,6 +53,15 @@ const monthLabel = computed(() => {
 
 const currentMonthBudgets = computed(() => {
   return budgetStore.budgets.filter((b) => normalizeYearMonth(b.yearMonth) === currentMonth.value)
+})
+
+const availableCategories = computed(() => {
+  const month = selectedMonth.value || currentMonth.value
+  const budgetCategories = budgetStore.budgets
+    .filter((b) => normalizeYearMonth(b.yearMonth) === month)
+    .map((b) => b.category)
+  const ordered = CATEGORIES.filter((c) => budgetCategories.includes(c) || c === 'Other')
+  return ordered.length > 0 ? ordered : ['Other']
 })
 
 function getSpentForCategory(category) {
@@ -141,6 +155,12 @@ async function handleSubmit() {
 
 watch(() => form.value.category, updateBudgetInfo)
 
+watch(availableCategories, (cats) => {
+  if (!cats.includes(form.value.category)) {
+    form.value.category = cats[0]
+  }
+})
+
 onMounted(() => {
   spendingStore.fetchSpendings().catch((e) => toast.error(e.message))
   budgetStore.fetchBudgets().catch((e) => toast.error(e.message))
@@ -225,7 +245,7 @@ onMounted(() => {
           <div class="flex-1">
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Category</label>
             <select v-model="form.category" class="input-field bg-white">
-              <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
+              <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
         </div>
