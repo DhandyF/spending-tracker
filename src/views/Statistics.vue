@@ -54,6 +54,7 @@ const categoryEmojis = {
   Snack: '🍿',
   Sembako: '🍚',
   Hangout: '☕',
+  Housemaid: '🧹',
   Transportation: '🚗',
   Emergency: '🚨',
   Other: '📦',
