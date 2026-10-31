@@ -7,6 +7,8 @@ export const CATEGORIES = [
   'Husband',
   'Vath',
   'Snack',
+  'Sembako',
+  'Hangout',
   'Transportation',
   'Emergency',
   'Other',

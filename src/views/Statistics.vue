@@ -50,8 +50,12 @@ const categoryEmojis = {
   'Home Appliances': '🏠',
   Wife: '💖',
   Husband: '👔',
-  Vath: '🙏',
+  Vath: '👶',
   Snack: '🍿',
+  Sembako: '🍚',
+  Hangout: '☕',
+  Transportation: '🚗',
+  Emergency: '🚨',
   Other: '📦',
 }
 

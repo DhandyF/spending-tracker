@@ -23,8 +23,12 @@ const categoryEmojis = {
   'Home Appliances': '🏠',
   Wife: '💖',
   Husband: '👔',
-  Vath: '🙏',
+  Vath: '👶',
   Snack: '🍿',
+  Sembako: '🍚',
+  Hangout: '☕',
+  Transportation: '🚗',
+  Emergency: '🚨',
   Other: '📦',
 }
 
@@ -35,6 +39,10 @@ const categoryColors = {
   Husband: 'badge-amber',
   Vath: 'badge-green',
   Snack: 'badge-pink',
+  Sembako: 'badge-amber',
+  Hangout: 'badge-purple',
+  Transportation: 'badge-blue',
+  Emergency: 'badge-pink',
   Other: 'badge-blue',
 }
 
